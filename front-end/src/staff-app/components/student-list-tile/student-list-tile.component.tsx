@@ -1,25 +1,56 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import styled from "styled-components"
 import { Spacing, BorderRadius, FontWeight } from "shared/styles/styles"
-import { Images } from "assets/images"
+import { Images as Image } from "assets/images"
 import { Colors } from "shared/styles/colors"
 import { Person, PersonHelper } from "shared/models/person"
 import { RollStateSwitcher } from "staff-app/components/roll-state/roll-state-switcher.component"
+import { RollInput, RolllStateType, RollState } from "shared/models/roll"
 
 interface Props {
   isRollMode?: boolean
   student: Person
+  rollData: RollInput
+  setRollData:any
+  allowChange?:boolean
 }
-export const StudentListTile: React.FC<Props> = ({ isRollMode, student }) => {
+export const StudentListTile: React.FC<Props> = ({ isRollMode, student, rollData,setRollData,allowChange=true  }) => {
+  const [currentRollState,setCurrentRollState] = useState<RolllStateType>("unmark")
+  const {id:currentStudentId}  = student
+  const personFullName = PersonHelper.getFullName(student)
+  const defaultPersonAvatar = Image?.avatar
+
+  useEffect(()=>{
+    rollData.student_roll_states.forEach((item:RollState)=>{
+      if (item.student_id === student.id){
+        setCurrentRollState(item.roll_state)
+      }
+    })
+  },[
+    rollData
+  ])
+  
+  const handleChangefunction=(attendenceType:RolllStateType)=>{
+    const updateStudentsData= rollData.student_roll_states.map((loppingStudent:RollState) =>{
+      const {student_id:loppingStudentId} = loppingStudent
+
+      if( currentStudentId == loppingStudentId) {
+        loppingStudent.roll_state = attendenceType
+      }
+      return loppingStudent
+    })
+
+    setRollData({student_roll_states:[...updateStudentsData]})
+  }
   return (
-    <S.Container>
-      <S.Avatar url={Images.avatar}></S.Avatar>
-      <S.Content>
-        <div>{PersonHelper.getFullName(student)}</div>
-      </S.Content>
+    <S.Container key={`${currentStudentId}_${currentRollState}`}>
+        {defaultPersonAvatar && <S.Avatar url={defaultPersonAvatar}></S.Avatar>}
+      {personFullName &&<S.Content>
+        <div>{personFullName}</div>
+      </S.Content>}
       {isRollMode && (
         <S.Roll>
-          <RollStateSwitcher />
+          <RollStateSwitcher initialState={currentRollState} onStateChange={allowChange ? handleChangefunction:()=>{}} allowChange={allowChange} />
         </S.Roll>
       )}
     </S.Container>
